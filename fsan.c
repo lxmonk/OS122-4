@@ -17,16 +17,18 @@ int main(int argc, char *argv[])
     fd = open("bigfile", O_CREATE | O_RDWR);
     for (i = 0; i < 1024; i++) {
         write(fd, kb, sizeof kb);
-        if (i == 6)
+        if (i == 5)
             printf(2, "Finished writing 6KB (direct)\n");
-        if (i == 70)
+        if (i == 69)
             printf(2, "Finished writing 70KB (single indirect)\n");
-        if ((i % 100) == 0)
-            printf(2, "Finished writing %dKB\n", i);
+        if ((i % 100) == 99)
+            printf(2, "Finished writing %dKB\n", i+1);
 
     }
 
     printf(2, "Finished writing 1MB\n");
 
-    return 0;
+    close(fd);
+
+    exit();
 }
