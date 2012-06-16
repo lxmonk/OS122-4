@@ -5,7 +5,7 @@
 //   + Directories: inode with special contents (list of other inodes!)
 //   + Names: paths like /usr/rtm/xv6/fs.c for convenient naming.
 //
-// This file contains the low-level file system manipulation 
+// This file contains the low-level file system manipulation
 // routines.  The (higher-level) system call implementations
 // are in sysfile.c.
 
@@ -28,7 +28,7 @@ void
 readsb(int dev, struct superblock *sb)
 {
   struct buf *bp;
-  
+
   bp = bread(dev, 1);
   memmove(sb, bp->data, sizeof(*sb));
   brelse(bp);
@@ -39,14 +39,14 @@ static void
 bzero(int dev, int bno)
 {
   struct buf *bp;
-  
+
   bp = bread(dev, bno);
   memset(bp->data, 0, BSIZE);
   log_write(bp);
   brelse(bp);
 }
 
-// Blocks. 
+// Blocks.
 
 // Allocate a zeroed disk block.
 static uint
@@ -348,8 +348,10 @@ iunlockput(struct inode *ip)
 //
 // The content (data) associated with each inode is stored
 // in blocks on the disk. The first NDIRECT block numbers
-// are listed in ip->addrs[].  The next NINDIRECT blocks are 
+// are listed in ip->addrs[].  The next NINDIRECT blocks are
 // listed in block ip->addrs[NDIRECT].
+
+/* A&T The next DINDIRECT blocks are listed in block ip->addrs[NDIRECT+1] */
 
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
@@ -380,6 +382,31 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
 
+  /* A&T Double indirect */
+  bn -= NINDIRECT;
+  if(bn < DINDIRECT){
+      /* Load double indirect block, allocating if necessary */
+      if ((addr = ip->addrs[NDIRECT+1]) == 0)
+          ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);
+      bp = bread(ip->dev, addr);
+      a = (uint*)bp->data;
+      if ((addr = a[bn/(NINDIRECT)]) == 0) { /* A&T get index for 1st
+                                                indirection. (NINDIRECT is 128) */
+          a[bn/(NINDIRECT)] = addr = balloc(ip->dev);
+          log_write(bp);
+      }
+      brelse(bp);               /* release the double indirect table
+                                   (main level) */
+      bp = bread(ip->dev, addr);
+      a = (uint*)bp->data;
+      if ((addr = a[bn%(NINDIRECT)]) == 0) { /* A&T get the 2nd level table */
+          a[bn%(NINDIRECT)] = addr = balloc(ip->dev);
+          log_write(bp);
+      }
+      brelse(bp);
+      return addr;
+  }
+
   panic("bmap: out of range");
 }
 
@@ -392,8 +419,8 @@ static void
 itrunc(struct inode *ip)
 {
   int i, j;
-  struct buf *bp;
-  uint *a;
+  struct buf *bp, *bp2;
+  uint *a, *a2;
 
   for(i = 0; i < NDIRECT; i++){
     if(ip->addrs[i]){
@@ -401,7 +428,7 @@ itrunc(struct inode *ip)
       ip->addrs[i] = 0;
     }
   }
-  
+
   if(ip->addrs[NDIRECT]){
     bp = bread(ip->dev, ip->addrs[NDIRECT]);
     a = (uint*)bp->data;
@@ -413,6 +440,29 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
   }
+
+  /* A&T truncate the 2-level indirection blocks */
+  if (ip->addrs[NDIRECT+1]) {
+      bp = bread(ip->dev, ip->addrs[NDIRECT+1]);
+      a = (uint*)bp->data;
+      for(i = 0; i < NINDIRECT; i++) {
+          if (a[i]) {
+              bp2 = bread(ip->dev, a[i]);
+              a2 = (uint*)bp2->data;
+              for (j = 0; j < NINDIRECT; j++) {
+                  if (a2[j]) {
+                      bfree(ip->dev, a2[j]);
+                  }
+              }
+              brelse(bp2);
+              bfree(ip->dev, a[i]);
+          }
+      }
+      bfree(ip->dev, ip->addrs[NDIRECT+1]); /* A&T release main level
+                                               (double indirect) */
+      ip->addrs[NDIRECT+1] = 0;
+  }
+  /* A&T end */
 
   ip->size = 0;
   iupdate(ip);
@@ -554,7 +604,7 @@ dirlink(struct inode *dp, char *name, uint inum)
   de.inum = inum;
   if(writei(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
     panic("dirlink");
-  
+
   return 0;
 }
 

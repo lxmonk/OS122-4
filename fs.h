@@ -1,4 +1,4 @@
-// On-disk file system format. 
+// On-disk file system format.
 // Both the kernel and user programs use this header file.
 
 // Block 0 is unused.
@@ -21,7 +21,8 @@ struct superblock {
 
 #define NDIRECT 12
 #define NINDIRECT (BSIZE / sizeof(uint))
-#define MAXFILE (NDIRECT + NINDIRECT)
+#define DINDIRECT ((NINDIRECT) * (NINDIRECT)) /* A&T Double Indirect blocks */
+#define MAXFILE (NDIRECT + NINDIRECT + DINDIRECT)
 
 // On-disk inode structure
 struct dinode {
@@ -30,7 +31,9 @@ struct dinode {
   short minor;          // Minor device number (T_DEV only)
   short nlink;          // Number of links to inode in file system
   uint size;            // Size of file (bytes)
-  uint addrs[NDIRECT+1];   // Data block addresses
+  uint addrs[NDIRECT+1+1];	// Data block addresses
+                                /* A&T +1 for DINDIRECT block */
+  uchar padding[(128-68)];       /* A&T padding to reach 128 bytes size */
 };
 
 // Inodes per block.
@@ -52,4 +55,3 @@ struct dirent {
   ushort inum;
   char name[DIRSIZ];
 };
-
