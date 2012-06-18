@@ -453,6 +453,7 @@ sys_symlink(void)
     if (strlen(target) > 50)
         panic("target soft link path is too long ");
     safestrcpy((char*)ip->addrs,target,50);
+    K_DEBUG_PRINT(9,"inode ip->addrs= %s",(char*)ip->addrs);
     iunlock(ip);
     //
 
@@ -464,4 +465,9 @@ sys_symlink(void)
 
     return 0;
 
+}
+int
+sys_readlink(void)
+{
+    return 0;
 }

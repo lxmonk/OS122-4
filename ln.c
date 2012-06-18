@@ -16,9 +16,16 @@ main(int argc, char *argv[])
         exit();
     }
     //A&T soft link
-    if ((argv[1][0] == '-') && (argv[1][1] == 's') && (argv[1][2] == 0))
-        if (symlink(argv[2], argv[3]) < 0)
-            printf(2, "link -s %s %s: failed\n", argv[2], argv[3]);
+    if ((argv[1][0] == '-') && (argv[1][1] == 's')
+        && (argv[1][2] == 0))
+        {
+            if (strlen(argv[2]) > 50) {
+                printf(2, "link failed , %s too long(max length 50)\n", argv[2]);
+
+            }
+            if (symlink(argv[2], argv[3]) < 0)
+                printf(2, "link -s %s %s: failed\n", argv[2], argv[3]);
+        }
     else
         printf(2, "Usage: ln [-s] old new\n"); //A&T not '-s'
     exit();
