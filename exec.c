@@ -7,6 +7,8 @@
 #include "x86.h"
 #include "elf.h"
 
+#define I_SYMLNK 0x3
+
 int
 exec(char *path, char **argv)
 {
@@ -15,12 +17,31 @@ exec(char *path, char **argv)
   uint argc, sz, sp, ustack[3+MAXARG+1];
   struct elfhdr elf;
   struct inode *ip;
+  // struct inode *sym_ip;
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
 
   if((ip = namei(path)) == 0)
     return -1;
   ilock(ip);
+  //A&T checks if symlink
+  /*  for (i=0;i < 16 ; i++) { //prevents loops ,up to 16 chain links */
+  /*     /\* if (ip->flags & I_SYMLNK) { *\/ */
+  /*     /\*     if((sym_ip = namei((char*)ip->addrs)) == 0) { *\/ */
+  /*     /\*         iunlock(ip); *\/ */
+  /*     /\*         return -1; *\/       */
+  /*       } */
+  /*         iunlock(ip); */
+  /*         ip = sym_ip; */
+  /*         ilock(ip); */
+  /*     } else */
+  /*         break; */
+  /* } */
+  /* if (i == 16) { */
+  /*     panic("symbolic link exceeds 16 links "); */
+  /* } */
+  //A&T - end
+
   pgdir = 0;
 
   // Check ELF header

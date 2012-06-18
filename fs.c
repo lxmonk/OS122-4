@@ -422,6 +422,16 @@ itrunc(struct inode *ip)
   struct buf *bp, *bp2;
   uint *a, *a2;
 
+  //A&T checks is symlink , delete the path stored in ip->addrs
+  if(ip->flags & I_SYMLNK) {
+      memset(ip->addrs,0,sizeof(ip->addrs));
+      ip->flags &= (~I_SYMLNK);
+      ip->size = 0;
+      iupdate(ip);
+      return;
+  }
+  //A&T - end
+
   for(i = 0; i < NDIRECT; i++){
     if(ip->addrs[i]){
       bfree(ip->dev, ip->addrs[i]);

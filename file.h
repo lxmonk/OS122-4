@@ -26,6 +26,7 @@ struct inode {
 };
 #define I_BUSY 0x1
 #define I_VALID 0x2
+#define I_SYMLNK 0x4
 
 // table mapping major device number to
 // device functions

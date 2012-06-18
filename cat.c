@@ -20,7 +20,7 @@ cat(int fd)
 int
 main(int argc, char *argv[])
 {
-  int fd, i;
+    int fd, i;
 
   if(argc <= 1){
     cat(0);
@@ -32,6 +32,7 @@ main(int argc, char *argv[])
       printf(1, "cat: cannot open %s\n", argv[i]);
       exit();
     }
+
     cat(fd);
     close(fd);
   }
