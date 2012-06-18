@@ -16,7 +16,7 @@ main(int argc, char *argv[])
         exit();
     }
     //A&T soft link
-    if ((argv[1][0] == '-') && (argv[1][1] == 's'))
+    if ((argv[1][0] == '-') && (argv[1][1] == 's') && (argv[1][2] == 0))
         if (symlink(argv[2], argv[3]) < 0)
             printf(2, "link -s %s %s: failed\n", argv[2], argv[3]);
     else

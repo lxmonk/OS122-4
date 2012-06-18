@@ -1,5 +1,6 @@
 struct file {
-  enum { FD_NONE, FD_PIPE, FD_INODE } type;
+                         //A&T added FD_SYMLNK
+  enum { FD_NONE, FD_PIPE, FD_INODE ,FD_SYMLNK} type;
   int ref; // reference count
   char readable;
   char writable;

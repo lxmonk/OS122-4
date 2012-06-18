@@ -54,7 +54,7 @@ sys_dup(void)
 {
   struct file *f;
   int fd;
-  
+
   if(argfd(0, 0, &f) < 0)
     return -1;
   if((fd=fdalloc(f)) < 0)
@@ -92,7 +92,7 @@ sys_close(void)
 {
   int fd;
   struct file *f;
-  
+
   if(argfd(0, &fd, &f) < 0)
     return -1;
   proc->ofile[fd] = 0;
@@ -105,7 +105,7 @@ sys_fstat(void)
 {
   struct file *f;
   struct stat *st;
-  
+
   if(argfd(0, 0, &f) < 0 || argptr(1, (void*)&st, sizeof(*st)) < 0)
     return -1;
   return filestat(f, st);
@@ -341,7 +341,7 @@ sys_mknod(void)
   char *path;
   int len;
   int major, minor;
-  
+
   begin_trans();
   if((len=argstr(0, &path)) < 0 ||
      argint(1, &major) < 0 ||
@@ -422,4 +422,46 @@ sys_pipe(void)
   fd[0] = fd0;
   fd[1] = fd1;
   return 0;
+}
+
+
+//A&T create a soft link
+int
+sys_symlink(void)
+{
+    char *target,*path;
+    //    int fd;
+    struct file *f;
+    struct inode *ip;
+
+    if(argstr(0, &target) < 0 || argstr(1, &path) < 0)
+        return -1;
+    begin_trans();
+    ip = create(path, T_FILE, 0, 0);
+    commit_trans();
+    if(ip == 0)
+        return -1;
+
+    if((f = filealloc()) == 0){  //|| (fd = fdalloc(f)) < 0){
+        if(f)
+            fileclose(f);
+        iunlockput(ip);
+        return -1;
+    }
+
+    //change the inode
+    if (strlen(target) > 50)
+        panic("target soft link path is too long ");
+    safestrcpy((char*)ip->addrs,target,50);
+    iunlock(ip);
+    //
+
+    f->type = FD_SYMLNK;
+    f->ip = ip;
+    f->off = 0;
+    f->readable = 1; //readable
+    f->writable = 0; //not writable
+
+    return 0;
+
 }
