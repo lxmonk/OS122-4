@@ -192,4 +192,4 @@ int             k_readlink(char*, char*, uint);
                                          __FILE__, __LINE__, __func__,	\
                                          __VA_ARGS__); } while (0)
 
-#define  T_A_DEBUG 9
+#define  T_A_DEBUG 0

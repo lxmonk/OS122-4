@@ -490,6 +490,7 @@ sys_symlink(void)
         panic("target soft link path is too long ");
     safestrcpy((char*)ip->addrs,target,MAX_LNK_NAME);
     ip->flags |= I_SYMLNK;
+    ip->size = 0;
     K_DEBUG_PRINT(9,"inode ip->addrs= %s",(char*)ip->addrs);
     iunlock(ip);
     //

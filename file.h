@@ -15,7 +15,7 @@ struct inode {
   uint dev;           // Device number
   uint inum;          // Inode number
   int ref;            // Reference count
-  int flags;          // I_BUSY, I_VALID
+  int flags;          // I_BUSY, I_VALID, I_SYMLNK
 
   short type;         // copy of disk inode
   short major;

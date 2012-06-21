@@ -8,4 +8,5 @@ struct stat {
   uint ino;    // Inode number on device
   short nlink; // Number of links to file
   uint size;   // Size of file in bytes
+    char symlink;               /* A&T */
 };
