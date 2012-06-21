@@ -14,6 +14,9 @@
 #include "file.h"
 #include "fcntl.h"
 
+
+int k_readlink(char* path, char* buf, uint bufsiz); /* A&T forward declaration */
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -379,10 +382,23 @@ int
 sys_chdir(void)
 {
   char *path;
+  char sym_path[MAX_LNK_NAME];            /* A&T if it's a symlink */
   struct inode *ip;
 
-  if(argstr(0, &path) < 0 || (ip = namei(path)) == 0)
-    return -1;
+  if(argstr(0, &path) < 0)
+      return -1;
+
+  /* A&T de-reference path if it's a symlink */
+  if ((k_readlink(path, sym_path, MAX_LNK_NAME)) != -1) {
+      if ((ip = namei(sym_path)) == 0)
+          return -1;
+  } else {			/* A&T no a symlink */
+      if ((ip = namei(path)) == 0)
+          return -1;
+  }
+
+
+
   ilock(ip);
   if(ip->type != T_DIR){
     iunlockput(ip);
@@ -470,9 +486,9 @@ sys_symlink(void)
     }
 
     //change the inode
-    if (strlen(target) > 50)
+    if (strlen(target) > MAX_LNK_NAME)
         panic("target soft link path is too long ");
-    safestrcpy((char*)ip->addrs,target,50);
+    safestrcpy((char*)ip->addrs,target,MAX_LNK_NAME);
     ip->flags |= I_SYMLNK;
     K_DEBUG_PRINT(9,"inode ip->addrs= %s",(char*)ip->addrs);
     iunlock(ip);
@@ -495,7 +511,8 @@ sys_readlink(void)
     char *path;
     char *buf;
     uint bufsiz;
-    struct inode *ip;
+    struct inode *ip, *sym_ip;
+    int i;
 
     if(argstr(0, &path) < 0 || argstr(1, &buf) < 0  || argint(2, (int*)&bufsiz) < 0)
         return -1;
@@ -503,9 +520,89 @@ sys_readlink(void)
     if((ip = namei(path)) == 0)
         return -1;
     ilock(ip);
+
+    if (!(ip->flags & I_SYMLNK)){
+        iunlock(ip);
+        return -1;
+    }
+
+    for (i=0;i < 16 ; i++) { //prevents loops ,up to 16 chain links
+        /* if (ip->flags & I_SYMLNK) { */
+        if((sym_ip = namei((char*)ip->addrs)) == 0) {
+            iunlock(ip);
+            return -1;
+        }
+        if (sym_ip->flags & I_SYMLNK) {
+            iunlock(ip);
+            ip = sym_ip;
+            ilock(ip);
+        } else {
+            break;		/* found the non-symlink file. last
+                                   link in ip. */
+        }
+        /* } else { */
+        /*     break; */
+        /* } */
+    }
+    if (i == 16) {
+        panic("symbolic link exceeds 16 links ");
+    }
+
+
     if((ip->type == T_FILE) && (ip->flags & I_SYMLNK)){
         safestrcpy(buf,(char*)ip->addrs,bufsiz);
+        iunlock(ip);
         return strlen(buf);
     }
+    iunlock(ip);
+    return -1;
+}
+
+
+//A&T stores the target name in buf - for use by kernel (not syscall)
+int
+k_readlink(char* path, char* buf, uint bufsiz)
+{
+    struct inode *ip, *sym_ip;
+    int i;
+
+    if((ip = namei(path)) == 0)
+        return -1;
+    ilock(ip);
+
+    if (!(ip->flags & I_SYMLNK)){
+        iunlock(ip);
+        return -1;
+    }
+
+    for (i=0;i < 16 ; i++) { //prevents loops ,up to 16 chain links
+        /* if (ip->flags & I_SYMLNK) { */
+        if((sym_ip = namei((char*)ip->addrs)) == 0) {
+            iunlock(ip);
+            return -1;
+        }
+        if (sym_ip->flags & I_SYMLNK) {
+            iunlock(ip);
+            ip = sym_ip;
+            ilock(ip);
+        } else {
+            break;		/* found the non-symlink file. last
+                                   link in ip. */
+        }
+        /* } else { */
+        /*     break; */
+        /* } */
+    }
+    if (i == 16) {
+        panic("symbolic link exceeds 16 links ");
+    }
+
+
+    if((ip->type == T_FILE) && (ip->flags & I_SYMLNK)){
+        safestrcpy(buf,(char*)ip->addrs,bufsiz);
+        iunlock(ip);
+        return strlen(buf);
+    }
+    iunlock(ip);
     return -1;
 }

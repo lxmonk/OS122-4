@@ -8,6 +8,8 @@ struct spinlock;
 struct stat;
 struct superblock;
 
+#define MAX_LNK_NAME 50		/* A&T maximal symbolic link file name */
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -176,6 +178,10 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+
+/* A&T */
+// sysfile.c
+int             k_readlink(char*, char*, uint);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

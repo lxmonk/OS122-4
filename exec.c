@@ -17,20 +17,30 @@ exec(char *path, char **argv)
   uint argc, sz, sp, ustack[3+MAXARG+1];
   struct elfhdr elf;
   struct inode *ip;
-  // struct inode *sym_ip;
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
+  char tmp_path[MAX_LNK_NAME];		/* A&T */
 
-  if((ip = namei(path)) == 0)
-    return -1;
+  /* A&T use readlink to de-reference symbolic links  */
+
+  if (k_readlink(path, tmp_path, MAX_LNK_NAME) != -1) {
+      if((ip = namei(tmp_path)) == 0)
+          return -1;
+  } else {
+      if((ip = namei(path)) == 0)
+          return -1;
+  }
+
   ilock(ip);
+
+
   //A&T checks if symlink
   /*  for (i=0;i < 16 ; i++) { //prevents loops ,up to 16 chain links */
-  /*     /\* if (ip->flags & I_SYMLNK) { *\/ */
-  /*     /\*     if((sym_ip = namei((char*)ip->addrs)) == 0) { *\/ */
-  /*     /\*         iunlock(ip); *\/ */
-  /*     /\*         return -1; *\/       */
-  /*       } */
+  /*     if (ip->flags & I_SYMLNK) { */
+  /*         if((sym_ip = namei((char*)ip->addrs)) == 0) { */
+  /*             iunlock(ip); */
+  /*             return -1; */
+  /*         } */
   /*         iunlock(ip); */
   /*         ip = sym_ip; */
   /*         ilock(ip); */
