@@ -89,7 +89,6 @@ int find(char* path, char *name) {
         }
         printf(1, "%s\n", path);
         return 0;
-
     }
 
     if((fd = open(path, 0)) < 0){
@@ -118,10 +117,6 @@ int find(char* path, char *name) {
 
     case T_DIR:
         DEBUG_PRINT(9, "it's a directory.", 999);
-        if (qualifies(st, namefmt(path))) {
-            DEBUG_PRINT(8, "T_DIR:", 999);
-            printf(1, "%s\n", path);
-        }
         if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
             printf(1, "find: path too long\n");
             break;
@@ -132,6 +127,12 @@ int find(char* path, char *name) {
         } else {
             strcpy(buf, path);
         }
+
+        if (qualifies(st, namefmt(path))) {
+            DEBUG_PRINT(8, "T_DIR:", 999);
+            printf(1, "%s\n", buf);
+        }
+
         p = buf+strlen(buf);
         *p++ = '/';
         while(read(fd, &de, sizeof(de)) == sizeof(de)){
