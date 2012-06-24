@@ -531,7 +531,7 @@ sys_readlink(void)
         /* if (ip->flags & I_SYMLNK) { */
         if((sym_ip = namei((char*)ip->addrs)) == 0) {
             iunlock(ip);
-            return -1;
+            return -2;		/* broken link */
         }
         if (sym_ip->flags & I_SYMLNK) {
             iunlock(ip);

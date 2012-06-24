@@ -65,10 +65,12 @@ int find(char* path, char *name) {
     struct dirent de;
     struct stat st;
 
-    DEBUG_PRINT(9, "path = %s", path);
+    DEBUG_PRINT(7, "path = %s, follow = %d", path, follow);
 
-    if (!follow && (readlink(path, sympath, (uint)50) != -1)) {
+    if ((!follow) && (readlink(path, sympath, (uint)50) != -1)) {
         /* "manually perform 'qualifies' for the file" */
+        DEBUG_PRINT(7, "local 'qualifies': readlink result = %d",
+                    readlink(path, sympath, (uint)50));
         if ((fname[0] != 0) && (strcmp(fname, name) != 0))
             return 0;
         if (size != -1) {
@@ -140,18 +142,20 @@ int find(char* path, char *name) {
                 continue;
             memmove(p, de.name, DIRSIZ);
             p[DIRSIZ] = 0;
-            if(stat(buf, &st) < 0){
-                printf(1, "find: cannot stat %s\n", buf);
-                continue;
-            }
+
+            /* if(stat(buf, &st) < 0){ */
+            /*     printf(1, "find: cannot stat %s\n", buf); */
+            /*     continue; */
+            /* } */
             if (de.name[0] == '.') /* don't loop yourself to death
                                       with '.' and '..' */
                 continue;
-            if (readlink(buf, sympath, 50) != -1) {/* it is a symlink */
+            if (follow && readlink(buf, sympath, 50) != -1) {/* it is a symlink */
                 DEBUG_PRINT(8, "it's a link according to readlink", 999);
                 find(sympath, namefmt(sympath));
             } else {
-                DEBUG_PRINT(8, "NOT a link according to readlink", 999);
+                DEBUG_PRINT(8, "NOT a link according to readlink. buf = %s",
+                            buf);
                 find(buf, de.name);
             }
         }
