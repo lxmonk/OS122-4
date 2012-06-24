@@ -607,3 +607,47 @@ k_readlink(char* path, char* buf, uint bufsiz)
     iunlock(ip);
     return -1;
 }
+
+/* A&T tags */
+int
+sys_ftag(void) {
+    int fd, ret;
+    char *key;
+    char *val;
+    struct file *file_ptr;
+
+    if(argfd(0, &fd, &file_ptr) < 0 || argstr(1, &key) < 0  || argstr(2, &val) < 0)
+        return -1;
+
+    K_DEBUG_PRINT(7, "fd = %d, key = %s, val = %s", fd, key, val);
+
+    begin_trans();
+    K_DEBUG_PRINT(7, "began transaction", 999);
+
+    ret = fs_ftag(file_ptr, key, val);
+
+    K_DEBUG_PRINT(7, "fs_ftag done", 999);
+
+    commit_trans();
+
+    K_DEBUG_PRINT(7, "transaction commited.", 999);
+    return ret;
+}
+
+int sys_funtag(void) {
+    int fd, ret;
+    char *key;
+    struct file *file_ptr;
+
+    if(argfd(0, &fd, &file_ptr) < 0 || argstr(1, &key) < 0)
+        return -1;
+
+    begin_trans();
+    ret = fs_funtag(file_ptr, key);
+    commit_trans();
+    return ret;
+}
+
+int sys_gettag(void) {
+    return -1;
+}

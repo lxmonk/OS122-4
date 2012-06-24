@@ -101,6 +101,10 @@ extern int sys_uptime(void);
 //A&T
 extern int sys_symlink(void);
 extern int sys_readlink(void);
+extern int sys_ftag(void);
+extern int sys_funtag(void);
+extern int sys_gettag(void);
+
 
 
 static int (*syscalls[])(void) = {
@@ -128,7 +132,9 @@ static int (*syscalls[])(void) = {
 //A&T
 [SYS_symlink] sys_symlink,
 [SYS_readlink] sys_readlink,
-
+[SYS_ftag]    sys_ftag,
+[SYS_funtag]  sys_funtag,
+[SYS_gettag]  sys_gettag,
 };
 
 void

@@ -24,3 +24,6 @@
 //A&T
 #define SYS_symlink 22
 #define SYS_readlink 23
+#define SYS_ftag 24
+#define SYS_funtag 25
+#define SYS_gettag 26

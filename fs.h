@@ -33,7 +33,10 @@ struct dinode {
   uint size;            // Size of file (bytes)
   uint addrs[NDIRECT+1+1];	// Data block addresses
                                 /* A&T +1 for DINDIRECT block */
-  uchar padding[(128-68)];       /* A&T padding to reach 128 bytes size */
+  uint tags;			/* A&T pointer to tags block */
+  uint tags_counter;            /* A&T counter for currently
+                                   allocated tags. */
+  uchar padding[(128-76)];       /* A&T padding to reach 128 bytes size */
 };
 
 // Inodes per block.
