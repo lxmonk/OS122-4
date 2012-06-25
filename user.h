@@ -49,4 +49,4 @@ int atoi(const char*);
                                         __FILE__, __LINE__, __func__,	\
                                         __VA_ARGS__); } while (0)
 
-#define T_A_DEBUG 7
+#define T_A_DEBUG 4

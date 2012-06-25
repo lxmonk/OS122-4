@@ -52,8 +52,10 @@ struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
+//A&T
 int             fs_ftag(struct file*, char*, char*);
 int             fs_funtag(struct file*, char*);
+int             fs_gettag(struct file*,char*,char*);
 
 // ide.c
 void            ideinit(void);
@@ -194,4 +196,4 @@ int             k_readlink(char*, char*, uint);
                                          __FILE__, __LINE__, __func__,	\
                                          __VA_ARGS__); } while (0)
 
-#define  T_A_DEBUG 7
+#define  T_A_DEBUG 0

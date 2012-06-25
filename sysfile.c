@@ -649,5 +649,17 @@ int sys_funtag(void) {
 }
 
 int sys_gettag(void) {
-    return -1;
+    int fd,ret;
+    char *key;
+    char *buf;
+    struct file *file_ptr;
+
+    if(argfd(0, &fd, &file_ptr) < 0 || argstr(1, &key) < 0 || argstr(2, &buf) < 0)
+        return -1;
+    K_DEBUG_PRINT(6, "inside sys_gettag. key = %s, file_ptr = %x.",key,(int)file_ptr);
+    begin_trans();
+
+    ret =fs_gettag(file_ptr,key,buf);
+    commit_trans();
+    return ret;
 }

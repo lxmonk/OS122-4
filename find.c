@@ -33,8 +33,13 @@ static int size;
 static char size_modifier;
 static char type;
 static int follow;
+static char key[10];
+static char val[30];
 
-int qualifies(struct stat st, char *name) {
+
+int qualifies(int fd,struct stat st, char *name) {
+    char buf[30];
+
     if ((fname[0] != 0) && (strcmp(fname, name) != 0))
         return 0;
     if (size != -1) {
@@ -54,7 +59,19 @@ int qualifies(struct stat st, char *name) {
     case 's': if ((st.type != T_FILE) || (st.symlink == 0)) return 0; break;
     default : break;
     }
+    if ((key[0] != 0) && (val[0] != 0)) {
+        DEBUG_PRINT(6,"key = %s , val = %s",key,val);
+        if (gettag(fd,key,buf) > 0) {
+            DEBUG_PRINT(6,"key = %s , val = %s, buf = %s",key,val,buf);
+            if (strcmp(val,"?") && strcmp(val,buf))
+                return 0;
+        }  else
+            {
+                DEBUG_PRINT(6,"return 0. key = %s , val = %s, buf = %s",key,val,buf);
+                return 0;
+            }
 
+    }
     return 1;
 }
 
@@ -89,6 +106,7 @@ int find(char* path, char *name) {
         case 'f': return 0;
         default : break;
         }
+
         printf(1, "%s\n", path);
         return 0;
     }
@@ -110,15 +128,15 @@ int find(char* path, char *name) {
 
     switch(st.type){
     case T_FILE:
-        DEBUG_PRINT(9, "it's a file.", 999);
-        if (qualifies(st, name)) {
-            DEBUG_PRINT(8, "T_FILE:", 999);
+        DEBUG_PRINT(5, "it's a file.name = %s", name);
+        if (qualifies(fd,st, name)) {
+            DEBUG_PRINT(5, "file qualifies, name = %s", name);
             printf(1, "%s\n", path);
         }
         break;
 
     case T_DIR:
-        DEBUG_PRINT(9, "it's a directory.", 999);
+        DEBUG_PRINT(5, "it's a directory.", 999);
         if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
             printf(1, "find: path too long\n");
             break;
@@ -130,23 +148,19 @@ int find(char* path, char *name) {
             strcpy(buf, path);
         }
 
-        if (qualifies(st, namefmt(path))) {
-            DEBUG_PRINT(8, "T_DIR:", 999);
+        if (qualifies(fd,st, namefmt(path))) {
+            DEBUG_PRINT(5, "DIR qualifies, path = %s", path);
             printf(1, "%s\n", buf);
         }
-
         p = buf+strlen(buf);
         *p++ = '/';
+
         while(read(fd, &de, sizeof(de)) == sizeof(de)){
             if(de.inum == 0)
                 continue;
             memmove(p, de.name, DIRSIZ);
             p[DIRSIZ] = 0;
 
-            /* if(stat(buf, &st) < 0){ */
-            /*     printf(1, "find: cannot stat %s\n", buf); */
-            /*     continue; */
-            /* } */
             if (de.name[0] == '.') /* don't loop yourself to death
                                       with '.' and '..' */
                 continue;
@@ -169,12 +183,14 @@ int main(int argc, char *argv[])
 {
 
     int i;
-    /* char *tag; */
+    char *dlimiter;
     fname[0] = 0;
     size = -1;			/* initial (null) value */
     size_modifier = 0;
     type = 0;
     follow = 0;
+    key[0] = 0;
+    val[0] = 0;
 
     if (argc == 1)
         usage();
@@ -201,7 +217,16 @@ int main(int argc, char *argv[])
             case 's': type = 's'; break;
             default: printf(2, "illegal file type: %s\n", argv[i+1]); return -1;
             }
+        } else if (!(strcmp(argv[i], "-tag"))) {
+            dlimiter=strchr(argv[i+1],'=');
+            *dlimiter = 0;
+            strcpy(key,argv[i+1]);
+            strcpy(val,dlimiter+1);
+            *dlimiter = '=';
+            DEBUG_PRINT(6,"tag is: argv[i+1] = %s, key = %s, val = %s ",argv[i+1],key,val);
         }
+
+
     }
     DEBUG_PRINT(9, "fname = %s, size = %d, size_modifier = %s, type = %s",
                 fname, size, size_modifier, type);
